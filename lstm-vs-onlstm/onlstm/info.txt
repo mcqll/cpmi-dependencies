@@ -1,0 +1,3 @@
+model_spec:	onlstm
+pad:	0
+conllx_file:	ptb3-wsj-data/ptb3-wsj-dev.conllx

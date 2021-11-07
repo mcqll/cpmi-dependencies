@@ -1,0 +1,13 @@
+model,absolute_value,algorithm,uuas
+lstm,False,nonproj,0.420
+lstm,False,proj,0.458
+lstm,True,nonproj,0.435
+lstm,True,proj,0.469
+onlstm,False,nonproj,0.425
+onlstm,False,proj,0.461
+onlstm,True,nonproj,0.439
+onlstm,True,proj,0.472
+onlstm_syd,False,nonproj,0.428
+onlstm_syd,False,proj,0.464
+onlstm_syd,True,nonproj,0.442
+onlstm_syd,True,proj,0.475

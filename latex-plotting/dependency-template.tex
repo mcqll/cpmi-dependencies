@@ -1,0 +1,23 @@
+\documentclass[tikz]{standalone}
+\usepackage{tikz,tikz-dependency}
+\pgfkeys{%
+/depgraph/edge unit distance=.75ex,
+/depgraph/reserved/edge style/.style = {
+-, % arrow properties
+semithick, solid, line cap=round, % line properties
+rounded corners=2, % make corners round
+},%
+/depgraph/reserved/label style/.style = {%
+% anchor = mid, draw, solid, black, rotate = 0, rounded corners = 2pt, 
+scale = .5,%
+text height = 1.5ex, text depth = 0.25ex, % needed to center text vertically
+inner sep=.2ex,%
+outer sep = 0pt,%
+text = black,%
+fill = white, %opacity = 0, text opacity = 0 % uncomment to hide all labels
+},%
+}
+\begin{document}
+% % Put dependency plots here, like
+% \input{1696.tikz}
+\end{document}
