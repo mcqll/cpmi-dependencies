@@ -1,0 +1,15 @@
+name: pmienv
+channels:
+  - defaults
+dependencies:
+  - tqdm
+  - jupyter_conda
+  - torchvision
+  - python=3.7
+  - cudatoolkit=9.2
+  - pandas
+  - pytorch
+  - numpy
+  - nltk
+prefix: /data/anaconda/envs/pmienv
+
