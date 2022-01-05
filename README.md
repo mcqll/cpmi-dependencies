@@ -224,6 +224,7 @@ python pmi_accuracy/main.py --model_spec load_npz --model_path lstm-results/lstm
     year = "2021",
     address = "Online and Punta Cana, Dominican Republic",
     publisher = "Association for Computational Linguistics",
+    doi = "10.18653/v1/2021.emnlp-main.234",
     url = "https://aclanthology.org/2021.emnlp-main.234",
     pages = "2941--2963"
 }
