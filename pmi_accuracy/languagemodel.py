@@ -90,9 +90,9 @@ class XLNetSentenceDataset(torch.utils.data.Dataset):
     def collate_fn(batch):
         """concatenate and prepare batch"""
         tbatch = {}
-        tbatch["input_ids"] = torch.LongTensor([b['input_ids'] for b in batch])
-        tbatch["perm_mask"] = torch.FloatTensor([b['perm_mask'] for b in batch])
-        tbatch["target_map"] = torch.FloatTensor([b['target_map'] for b in batch])
+        tbatch["input_ids"] = torch.LongTensor(np.array([b['input_ids'] for b in batch]))
+        tbatch["perm_mask"] = torch.FloatTensor(np.array([b['perm_mask'] for b in batch]))
+        tbatch["target_map"] = torch.FloatTensor(np.array([b['target_map'] for b in batch]))
         tbatch["target_id"] = [b['target_id'] for b in batch]
         tbatch["source_span"] = [b['source_span'] for b in batch]
         tbatch["target_span"] = [b['target_span'] for b in batch]
