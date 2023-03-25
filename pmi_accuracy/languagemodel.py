@@ -28,7 +28,7 @@ class LanguageModel:
             state_dict=state_dict).to(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_spec)
         self.batchsize = batchsize
-        print(f"\nLanguage model '{model_spec}' " +
+        tqdm.write(f"\nLanguage model '{model_spec}' " +
               f"(with batchsize = {batchsize}) " +
               f"initialized on {device}.\n")
 
@@ -54,7 +54,7 @@ class Baseline:
     """ Compute a linear/random baseline as if it were a model. """
     def __init__(self, baseline_spec):
         self.baseline_spec = baseline_spec
-        print(f"\nUsing baseline, type {baseline_spec}")
+        tqdm.write(f"\nUsing baseline, type {baseline_spec}")
 
     def ptb_tokenlist_to_pmi_matrix(
             self, ptb_tokenlist, add_special_tokens=True,
@@ -188,12 +188,13 @@ class XLNet(LanguageModel):
         n_pad_right = len(pad_right)
 
         if verbose:
-            print(f"PTB token list:\n{ptb_tokenlist}")
-            print(f"resulting subword tokens:\n{tokens}")
-            print(f"ptbtok->pos:\n{ptbtok_to_span}")
-            print(f"pos->ptbtok:\n{span_to_ptbtok}")
-            print(f'padleft:{pad_left}\npadright:{pad_right}')
-            print(f'input_ids:{ids}')
+            tqdm.write(f'\n• Token list:     {ptb_tokenlist}')
+            tqdm.write(f'• Subword tokens: {tokens}')
+            tqdm.write(f'• tok->span:      {ptbtok_to_span}')
+            tqdm.write(f'• span->tok:      {span_to_ptbtok}')
+            tqdm.write(f'• padleft:        {pad_left}')
+            tqdm.write(f'• padright:       {pad_right}')
+            tqdm.write(f'• input_ids:      {ids}')
 
         # setup data loader
         dataset = XLNetSentenceDataset(
@@ -252,7 +253,7 @@ class XLNet(LanguageModel):
             # we accumulate all log probs for subwords in a given span
             log_p[ptbtok_target, ptbtok_source] += log_target
             # num[ptbtok_target, ptbtok_source] += 1
-        # print(f'num:\n{num}')
+        # tqdm.write(f'num:\n{num}')
 
         # PMI(w_i, w_j | c ) = log p(w_i | c) - log p(w_i | c \ w_j)
         # log_p[i, i] is log p(w_i | c)
@@ -291,15 +292,15 @@ class XLNet(LanguageModel):
         # Custom adjustments below
         for i, subword_list_i in enumerate(subword_lists):
             if subword_list_i[0][0] == '▁' and subword_lists[i-1][-1] in ('(','[','{'):
-                # print(f'{i}: removing extra space after character. {subword_list_i[0]} => {subword_list_i[0][1:]}')
+                # tqdm.write(f'{i}: removing extra space after character. {subword_list_i[0]} => {subword_list_i[0][1:]}')
                 subword_list_i[0] = subword_list_i[0][1:]
                 if subword_list_i[0] == '':
                     subword_list_i.pop(0)
             if subword_list_i[0] == '▁' and subword_list_i[1] in (')',']','}',',','.','"',"'","!","?") and i != 0:
-                # print(f'{i}: removing extra space before character. {subword_list_i} => {subword_list_i[1:]}')
+                # tqdm.write(f'{i}: removing extra space before character. {subword_list_i} => {subword_list_i[1:]}')
                 subword_list_i.pop(0)
             if subword_list_i == ['▁', 'n', "'", 't'] and i != 0:
-                # print(f"{i}: fixing X▁n't => Xn 't ")
+                # tqdm.write(f"{i}: fixing X▁n't => Xn 't ")
                 del subword_list_i[0]
                 del subword_list_i[0]
                 subword_lists[i-1][-1] += 'n'
@@ -354,9 +355,9 @@ class BERTSentenceDataset(torch.utils.data.Dataset):
                         if i not in target_and_source_locs]) + self.n_pad_left
                     whether_to_corrupt = np.random.binomial(1, 30/100, len(possible_corrupt_locs)).astype(bool)
                     corrupt_locs = possible_corrupt_locs[whether_to_corrupt]
-                    # print(f'=== doing masking. target_span+source_span:{target_and_source_locs}')
-                    # print(f'=== possible_corrupt_locs: {possible_corrupt_locs}')
-                    # print(f'=== corrupt_locs: {corrupt_locs}')
+                    # tqdm.write(f'=== doing masking. target_span+source_span:{target_and_source_locs}')
+                    # tqdm.write(f'=== possible_corrupt_locs: {possible_corrupt_locs}')
+                    # tqdm.write(f'=== corrupt_locs: {corrupt_locs}')
                 for idx_target, target_pos in enumerate(target_span):
                     # these are the positions of the source span
                     abs_source = [self.n_pad_left + s for s in source_span]
@@ -439,12 +440,13 @@ class BERT(LanguageModel):
         n_pad_right = len(pad_right)
 
         if verbose:
-            print(f"PTB token list:\n{ptb_tokenlist}")
-            print(f"resulting subword tokens:\n{tokens}")
-            print(f"ptbtok->pos:\n{ptbtok_to_span}")
-            print(f"pos->ptbtok:\n{span_to_ptbtok}")
-            print(f'padleft:{pad_left}\npadright:{pad_right}')
-            print(f'input_ids:{ids}')
+            tqdm.write(f'\n• Token list:     {ptb_tokenlist}')
+            tqdm.write(f'• Subword tokens: {tokens}')
+            tqdm.write(f'• tok->span:      {ptbtok_to_span}')
+            tqdm.write(f'• span->tok:      {span_to_ptbtok}')
+            tqdm.write(f'• padleft:        {pad_left}')
+            tqdm.write(f'• padright:       {pad_right}')
+            tqdm.write(f'• input_ids:      {ids}')
 
         # setup data loader
         dataset = BERTSentenceDataset(
@@ -509,7 +511,7 @@ class BERT(LanguageModel):
             # we accumulate all log probs for subwords in a given span
             log_p[ptbtok_target, ptbtok_source] += log_target
             # num[ptbtok_target, ptbtok_source] += 1
-        # print(f'num:\n{num}')
+        # tqdm.write(f'num:\n{num}')
 
         # PMI(w_i, w_j | c ) = log p(w_i | c) - log p(w_i | c \ w_j)
         # log_p[i, i] is log p(w_i | c)
@@ -549,7 +551,7 @@ class BERT(LanguageModel):
         # Custom adjustments below
         for i, subword_list_i in enumerate(subword_lists):
             if subword_list_i == ['n', "'", 't'] and i != 0:
-                # print(f"{i}: fixing X n ' t => Xn ' t ")
+                # tqdm.write(f"{i}: fixing X n ' t => Xn ' t ")
                 del subword_list_i[0]
                 subword_lists[i-1][-1] += 'n'
 
@@ -672,12 +674,13 @@ class Bart(LanguageModel):
         n_pad_right = len(pad_right)
 
         if verbose:
-            print(f"PTB token list:\n{ptb_tokenlist}")
-            print(f"resulting subword tokens:\n{tokens}")
-            print(f"ptbtok->pos:\n{ptbtok_to_span}")
-            print(f"pos->ptbtok:\n{span_to_ptbtok}")
-            print(f'padleft:{pad_left}\npadright:{pad_right}')
-            print(f'input_ids:{ids}')
+            tqdm.write(f'\n• Token list:     {ptb_tokenlist}')
+            tqdm.write(f'• Subword tokens: {tokens}')
+            tqdm.write(f'• tok->span:      {ptbtok_to_span}')
+            tqdm.write(f'• span->tok:      {span_to_ptbtok}')
+            tqdm.write(f'• padleft:        {pad_left}')
+            tqdm.write(f'• padright:       {pad_right}')
+            tqdm.write(f'• input_ids:      {ids}')
 
         # setup data loader
         dataset = BartSentenceDataset(
@@ -740,7 +743,7 @@ class Bart(LanguageModel):
             # we accumulate all log probs for subwords in a given span
             log_p[ptbtok_target, ptbtok_source] += log_target
             # num[ptbtok_target, ptbtok_source] += 1
-        # print(f'num:\n{num}')
+        # tqdm.write(f'num:\n{num}')
 
         # PMI(w_i, w_j | c ) = log p(w_i | c) - log p(w_i | c \ w_j)
         # log_p[i, i] is log p(w_i | c)
@@ -783,7 +786,7 @@ class Bart(LanguageModel):
         # Custom adjustments below
         for i, subword_list_i in enumerate(subword_lists):
             if subword_list_i == ['\u0120n', "'t"] and i != 0:
-                # print(f"{i}: fixing X n 't => Xn 't ")
+                # tqdm.write(f"{i}: fixing X n 't => Xn 't ")
                 del subword_list_i[0]
                 subword_lists[i-1][-1] += 'n'
 
@@ -906,12 +909,13 @@ class XLM(LanguageModel):
         n_pad_right = len(pad_right)
 
         if verbose:
-            print(f"PTB token list:\n{ptb_tokenlist}")
-            print(f"resulting subword tokens:\n{tokens}")
-            print(f"ptbtok->pos:\n{ptbtok_to_span}")
-            print(f"pos->ptbtok:\n{span_to_ptbtok}")
-            print(f'padleft:{pad_left}\npadright:{pad_right}')
-            print(f'input_ids:{ids}')
+            tqdm.write(f'\n• Token list:     {ptb_tokenlist}')
+            tqdm.write(f'• Subword tokens: {tokens}')
+            tqdm.write(f'• tok->span:      {ptbtok_to_span}')
+            tqdm.write(f'• span->tok:      {span_to_ptbtok}')
+            tqdm.write(f'• padleft:        {pad_left}')
+            tqdm.write(f'• padright:       {pad_right}')
+            tqdm.write(f'• input_ids:      {ids}')
 
         # setup data loader
         dataset = XLMSentenceDataset(
@@ -974,7 +978,7 @@ class XLM(LanguageModel):
             # we accumulate all log probs for subwords in a given span
             log_p[ptbtok_target, ptbtok_source] += log_target
             # num[ptbtok_target, ptbtok_source] += 1
-        # print(f'num:\n{num}')
+        # tqdm.write(f'num:\n{num}')
 
         # PMI(w_i, w_j | c ) = log p(w_i | c) - log p(w_i | c \ w_j)
         # log_p[i, i] is log p(w_i | c)
@@ -1013,7 +1017,7 @@ class XLM(LanguageModel):
         # Custom adjustments below
         for i, subword_list_i in enumerate(subword_lists):
             if subword_list_i == ['n</w>', "'t</w>"] and i != 0:
-                # print(f"{i}: fixing X n 't => Xn 't ")
+                # tqdm.write(f"{i}: fixing X n 't => Xn 't ")
                 del subword_list_i[0]
                 subword_lists[i-1][-1] = subword_lists[i-1][-1][:-4] + 'n</w>'
 
@@ -1139,12 +1143,13 @@ class GPT2(LanguageModel):
         n_pad_right = len(pad_right)
 
         if verbose:
-            print(f"PTB token list:\n{ptb_tokenlist}")
-            print(f"resulting subword tokens:\n{tokens}")
-            print(f"ptbtok->pos:\n{ptbtok_to_span}")
-            print(f"pos->ptbtok:\n{span_to_ptbtok}")
-            print(f'padleft:{pad_left}\npadright:{pad_right}')
-            print(f'input_ids:{ids}')
+            tqdm.write(f'\n• Token list:     {ptb_tokenlist}')
+            tqdm.write(f'• Subword tokens: {tokens}')
+            tqdm.write(f'• tok->span:      {ptbtok_to_span}')
+            tqdm.write(f'• span->tok:      {span_to_ptbtok}')
+            tqdm.write(f'• padleft:        {pad_left}')
+            tqdm.write(f'• padright:       {pad_right}')
+            tqdm.write(f'• input_ids:      {ids}')
 
         # setup data loader
         dataset = GPT2SentenceDataset(
@@ -1208,7 +1213,7 @@ class GPT2(LanguageModel):
             # we accumulate all log probs for subwords in a given span
             log_p[ptbtok_target, ptbtok_source] += log_target
             # num[ptbtok_target, ptbtok_source] += 1
-        # print(f'num:\n{num}')
+        # tqdm.write(f'num:\n{num}')
 
         # PMI(w_i, w_j | c ) = log p(w_i | c) - log p(w_i | c \ w_j)
         # log_p[i, i] is log p(w_i | c)
@@ -1245,7 +1250,7 @@ class GPT2(LanguageModel):
         # Custom adjustments below
         for i, subword_list_i in enumerate(subword_lists):
             if subword_list_i == ['\u0120n', "'t"] and i != 0:
-                # print(f"{i}: fixing X n 't => Xn 't ")
+                # tqdm.write(f"{i}: fixing X n 't => Xn 't ")
                 del subword_list_i[0]
                 subword_lists[i-1][-1] = subword_lists[i-1][-1][:] + 'n'
 

@@ -29,35 +29,45 @@ def load_sentences_txt(path):
     return sentences
 
 
-def get_pmi(sentences, n_sentences='all', verbose=False):
+def get_cpmi(
+        model, sentences, n_sentences='all', verbose=False):
     '''get estimates get scores for n (default all) sentences'''
 
-    savez_dict = dict()
+    cpmis = dict()
+    pseudo_logliks = dict()
 
     if n_sentences == 'all':
         n_sentences = len(sentences)
 
     for i, sentence in enumerate(tqdm(sentences[:n_sentences], leave=False)):
         # get a pmi matrix and a pseudo-logprob for the sentence
-        pmi_matrix, pseudo_loglik = MODEL.ptb_tokenlist_to_pmi_matrix(
+        if verbose:    
+            tqdm.write(f"\nsentence {i}: {sentence}")
+        
+        pmi_matrix, pseudo_loglik = model.ptb_tokenlist_to_pmi_matrix(
             sentence, add_special_tokens=True, verbose=verbose,
             pad_left=None, pad_right=None)
+        
         if verbose:
-            tqdm.write(f"pmi for sentence {i}\n{sentence}")
-            tqdm.write(f"pseudo_loglik: {pseudo_loglik}")
-            tqdm.write(f"{pmi_matrix}")
+            tqdm.write(f"\n• pseudo_loglik: {pseudo_loglik}")
+            tqdm.write(f"• cpmi matrix:\n{np.array2string(pmi_matrix, precision=2, floatmode='fixed')}")
 
-        savez_dict[str(i)] = pmi_matrix
-    return savez_dict
+        cpmis[str(i)] = pmi_matrix
+        pseudo_logliks[str(i)] = pseudo_loglik
+
+    return cpmis, pseudo_logliks
 
 
 def save_pmi(
-        sentences, n_sentences,
-        resultsdir, outfilename='pmi_matrices.npz',
-        verbose=False):
-    savez_dict = get_pmi(sentences, n_sentences, verbose=verbose)
-    save_filepath = os.path.join(resultsdir, outfilename)
-    np.savez(save_filepath, **savez_dict)
+        model, sentences, n_sentences,
+        resultsdir, save_pseudo_loglik=True,
+        outfilename_prefix="", verbose=False):
+    cpmi, pseudo_loglik = get_cpmi(model, sentences, n_sentences, verbose=verbose)
+    np.savez(os.path.join(
+        resultsdir, outfilename_prefix+'cpmi_matrices.npz'), **cpmi)
+    if save_pseudo_loglik:
+        np.savez(os.path.join(
+            resultsdir, outfilename_prefix+'pseudo_logliks.npz'), **pseudo_loglik)
 
 
 if __name__ == '__main__':
@@ -67,8 +77,8 @@ if __name__ == '__main__':
     ARGP.add_argument('--txt', default='cpllab-syntactic-generalization/test_suites/txt',
                       help='''specify path/to/results/sentences.txt
                            or directory containing multiple txt files''')
-    ARGP.add_argument('--json', default='cpllab-syntactic-generalization/test_suites/json',
-                      help='''specify path/to/results/testsuite.json''')
+    # ARGP.add_argument('--json', default='cpllab-syntactic-generalization/test_suites/json',
+    #                   help='''specify path/to/results/testsuite.json''')
     ARGP.add_argument('--model_spec', default='xlnet-base-cased',
                       help='''specify model
                       (e.g. "xlnet-base-cased", "bert-large-cased")''')
@@ -78,7 +88,9 @@ if __name__ == '__main__':
                       help='optional: load model state or embeddings from file')
     ARGP.add_argument('--batch_size', default=32, type=int)
     ARGP.add_argument('--archive', action='store_true',
-                      help='to zip archive the pmi matrices folder')
+                      help='to zip archive the cpmi folder')
+    ARGP.add_argument('--verbose', action='store_true',
+                      help='be verbose when computing cpmi')
     CLI_ARGS = ARGP.parse_args()
 
     SPEC_STRING = str(CLI_ARGS.model_spec)
@@ -96,7 +108,7 @@ if __name__ == '__main__':
     NOW = datetime.now()
     DATE_SUFFIX = f'{NOW.year}-{NOW.month:02}-{NOW.day:02}-{NOW.hour:02}-{NOW.minute:02}'
     SPEC_SUFFIX = SPEC_STRING+'('+str(CLI_ARGS.n_sentences)+')' if CLI_ARGS.n_sentences != 'all' else SPEC_STRING
-    SUFFIX = 'SyntaxGym_' + SPEC_SUFFIX + '_' + DATE_SUFFIX
+    SUFFIX = SPEC_SUFFIX + '_' + DATE_SUFFIX
     RESULTS_DIR = os.path.join(CLI_ARGS.results_dir, SUFFIX + '/')
     os.makedirs(RESULTS_DIR, exist_ok=True)
     print(f'RESULTS_DIR: {RESULTS_DIR}\n')
@@ -153,7 +165,7 @@ if __name__ == '__main__':
         raise ValueError(
             f'Model spec string {CLI_ARGS.model_spec} not recognized.')
 
-    PMI_DIR = os.path.join(RESULTS_DIR, "pmi_matrices/")
+    PMI_DIR = os.path.join(RESULTS_DIR, "cpmi/")
     os.makedirs(PMI_DIR, exist_ok=True)
 
     if os.path.isfile(CLI_ARGS.txt):
@@ -161,20 +173,22 @@ if __name__ == '__main__':
         TASKNAME = os.path.splitext(os.path.basename(CLI_ARGS.txt))[0]
         print(f"getting pmi for: {TASKNAME}")
         save_pmi(
+            MODEL,
             SENTENCES, N_SENTENCES, PMI_DIR,
-            outfilename=TASKNAME + '.npz', verbose=False)
+            outfilename_prefix=TASKNAME+"_", verbose=CLI_ARGS.verbose)
     else:
         for dir_entry in tqdm(os.scandir(CLI_ARGS.txt)):
             SENTENCES = load_sentences_txt(dir_entry)
             TASKNAME = os.path.splitext(dir_entry.name)[0]
             tqdm.write(f"getting pmi for: {TASKNAME}")
             save_pmi(
+                MODEL,
                 SENTENCES, N_SENTENCES, PMI_DIR,
-                outfilename=TASKNAME + '.npz', verbose=False)
+                outfilename_prefix=TASKNAME+"_", verbose=CLI_ARGS.verbose)
 
     if CLI_ARGS.archive:
         shutil.make_archive(
-            base_name=os.path.join(RESULTS_DIR, "pmi_matrices/"),
+            base_name=os.path.join(RESULTS_DIR, "cpmi/"),
             format='zip',
             root_dir=PMI_DIR)
         shutil.rmtree(PMI_DIR)
