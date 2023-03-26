@@ -55,6 +55,13 @@ def get_cpmi(
         cpmis[str(i)] = pmi_matrix
         pseudo_logliks[str(i)] = pseudo_loglik
 
+    if verbose:
+        tqdm.write(
+            "\n----------\nCPMI matrix value at position [i,j] is\n"
+            " pmi(w_i, w_j | c) = log p(w_i | c) - log p(w_i | c without w_j)\n"
+            " where w_i is ith word in sentence, and c is rest of sentence."
+            "\n----------")
+
     return cpmis, pseudo_logliks
 
 
