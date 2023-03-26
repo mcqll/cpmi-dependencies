@@ -13,13 +13,41 @@ This repo contains the official code release for the EMNLP2021 paper:
 To use first create conda environment with requirements using
 
 ```bash
-conda create --name cpmi_env --file cpmi_env.yml
+conda create --name cpmi_env --file cpmi_environment.yml
 conda activate cpmi_env
+```
+
+Then
+```bash
 pip install transformers
 pip install sentencepiece # install sentencepiece tokenizer for xlnet
 ```
 
-### Data
+or
+```bash
+pip install -r cpmi_pip_requirements.txt
+```
+<!-- 
+These requirement files were made using the following:
+```
+conda env export --no-builds | grep -v "^prefix: " > cpmi_environment.yml
+pip freeze > cpmi_pip_requirements.txt 
+``` 
+-->
+
+## Examples
+
+- `example.ipynb`: interactive example getting CPMI matrices
+
+- CLI interface example:
+
+    ```bash
+    mkdir results
+    python pmi_accuracy/txt_to_pmi.py --txt example_sentences.txt --verbose --model_spec 'xlnet-base-cased'
+    ```
+    Gets CPMI matrices, using XLNet, for sentences in file `example_sentences.txt`.  Outputs to `results/` dir.
+
+## Data
 
 Get Data:
 

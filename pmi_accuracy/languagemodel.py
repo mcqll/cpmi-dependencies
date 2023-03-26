@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 import task
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelWithLMHead
+from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoModelForCausalLM
 
 
 class LanguageModel:
@@ -23,7 +23,7 @@ class LanguageModel:
     def __init__(self, device, model_spec, batchsize, state_dict=None):
         self.device = device
         self.model_spec = model_spec
-        self.model = AutoModelWithLMHead.from_pretrained(
+        self.model = AutoModelForMaskedLM.from_pretrained(
             pretrained_model_name_or_path=model_spec,
             state_dict=state_dict).to(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_spec)
@@ -146,6 +146,18 @@ class XLNetSentenceDataset(torch.utils.data.Dataset):
 
 class XLNet(LanguageModel):
     """Class for using XLNet as estimator"""
+
+    def __init__(self, device, model_spec, batchsize, state_dict=None):
+            self.device = device
+            self.model_spec = model_spec
+            self.model = AutoModelForCausalLM.from_pretrained(
+                pretrained_model_name_or_path=model_spec,
+                state_dict=state_dict).to(device)
+            self.tokenizer = AutoTokenizer.from_pretrained(model_spec)
+            self.batchsize = batchsize
+            tqdm.write(f"\nLanguage model '{model_spec}' " +
+                f"(with batchsize = {batchsize}) " +
+                f"initialized on {device}.\n")
 
     def _create_pmi_dataset(
             self, ptb_tokenlist,
@@ -336,7 +348,7 @@ class BERTSentenceDataset(torch.utils.data.Dataset):
     def collate_fn(batch):
         """concatenate and prepare batch"""
         tbatch = {}
-        tbatch["input_ids"] = torch.LongTensor([b['input_ids'] for b in batch])
+        tbatch["input_ids"] = torch.LongTensor(np.array([b['input_ids'] for b in batch]))
         tbatch["target_loc"] = [b['target_loc'] for b in batch]
         tbatch["target_id"] = [b['target_id'] for b in batch]
         tbatch["source_span"] = [b['source_span'] for b in batch]
@@ -584,7 +596,7 @@ class BartSentenceDataset(torch.utils.data.Dataset):
     def collate_fn(batch):
         """concatenate and prepare batch"""
         tbatch = {}
-        tbatch["input_ids"] = torch.LongTensor([b['input_ids'] for b in batch])
+        tbatch["input_ids"] = torch.LongTensor(np.array([b['input_ids'] for b in batch]))
         tbatch["target_loc"] = [b['target_loc'] for b in batch]
         tbatch["target_id"] = [b['target_id'] for b in batch]
         tbatch["source_span"] = [b['source_span'] for b in batch]
@@ -819,7 +831,7 @@ class XLMSentenceDataset(torch.utils.data.Dataset):
     def collate_fn(batch):
         """concatenate and prepare batch"""
         tbatch = {}
-        tbatch["input_ids"] = torch.LongTensor([b['input_ids'] for b in batch])
+        tbatch["input_ids"] = torch.LongTensor(np.array([b['input_ids'] for b in batch]))
         tbatch["target_loc"] = [b['target_loc'] for b in batch]
         tbatch["target_id"] = [b['target_id'] for b in batch]
         tbatch["source_span"] = [b['source_span'] for b in batch]
@@ -1053,9 +1065,9 @@ class GPT2SentenceDataset(torch.utils.data.Dataset):
     def collate_fn(batch):
         """concatenate and prepare batch"""
         tbatch = {}
-        tbatch["input_ids"] = torch.LongTensor([b['input_ids'] for b in batch])
+        tbatch["input_ids"] = torch.LongTensor(np.array([b['input_ids'] for b in batch]))
         tbatch["attention_mask"] = torch.FloatTensor(
-            [b['attention_mask'] for b in batch])
+            np.array([b['attention_mask'] for b in batch]))
         tbatch["target_loc"] = [b['target_loc'] for b in batch]
         tbatch["target_id"] = [b['target_id'] for b in batch]
         tbatch["source_span"] = [b['source_span'] for b in batch]
